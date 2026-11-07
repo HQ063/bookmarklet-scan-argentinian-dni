@@ -1,0 +1,1 @@
+javascript:(()=>{if(window.__dniScannerPersistent){window.__dniScannerPersistent.open();return}const s=document.createElement('script');s.src='https://TU-USUARIO.github.io/bookmarklet-scan-argentinian-dni/dni-scanner.js';s.onerror=()=>alert('No se pudo cargar el escáner DNI (revisá URL o CSP)');document.head.appendChild(s)})()
