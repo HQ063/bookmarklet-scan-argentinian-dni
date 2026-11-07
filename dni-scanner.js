@@ -5,8 +5,17 @@
   const mobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
   const state = { stream: null, reader: null, active: false, closed: false, session: 0, preparing: null };
   const css = (el, style) => { el.style.cssText = style; return el; };
-  const button = css(document.createElement('button'), 'position:fixed;right:12px;bottom:calc(12px + env(safe-area-inset-bottom, 0px));z-index:2147483646;background:#146c50;color:#fff;border:0;border-radius:12px;padding:14px 18px;font:600 16px Arial;box-shadow:0 3px 14px #0005;cursor:pointer;touch-action:manipulation');
-  button.textContent = 'Preparando escáner…'; button.disabled = true;
+  const button = css(document.createElement('button'), 'position:absolute;right:6px;top:50%;transform:translateY(-50%);z-index:2;width:30px;height:30px;display:grid;place-items:center;background:transparent;color:inherit;border:0;border-radius:6px;padding:0;font:19px Arial;cursor:pointer;touch-action:manipulation');
+  button.type = 'button'; button.title = 'Escanear DNI'; button.setAttribute('aria-label', 'Escanear DNI');
+  button.textContent = '📷'; button.disabled = true;
+  function mountButton() {
+    const input = document.querySelector('input[name="name"]');
+    const wrapper = input?.closest('.MuiInputBase-root') || input?.parentElement;
+    if (!wrapper) return;
+    if (getComputedStyle(wrapper).position === 'static') wrapper.style.position = 'relative';
+    if (button.parentElement !== wrapper) wrapper.appendChild(button);
+    input.style.paddingRight = '42px';
+  }
   const panel = css(document.createElement('div'), 'position:fixed;inset:0;z-index:2147483647;background:#111e;color:white;display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px;font:16px Arial');
   const frame = css(document.createElement('div'), 'position:relative;width:min(96vw,900px);max-height:75dvh;overflow:hidden');
   const video = css(document.createElement('video'), 'display:block;width:100%;max-height:75dvh;object-fit:contain');
@@ -16,7 +25,9 @@
   const close = document.createElement('button'); close.textContent = 'Cerrar visor'; close.style.cssText = 'padding:8px 18px;cursor:pointer';
   const shutdown = css(document.createElement('button'), 'position:fixed;right:12px;bottom:calc(70px + env(safe-area-inset-bottom, 0px));z-index:2147483646;background:#444;color:white;border:0;border-radius:8px;padding:8px 12px;font:13px Arial;cursor:pointer');
   shutdown.textContent = 'Apagar escáner';
-  frame.append(video, guide); panel.append(frame, status, close); document.body.append(button, shutdown, panel);
+  frame.append(video, guide); panel.append(frame, status, close); document.body.append(shutdown, panel); mountButton();
+  const mountObserver = new MutationObserver(() => { if (!state.closed) mountButton(); });
+  mountObserver.observe(document.body, { childList: true, subtree: true });
 
   function hide() {
     state.active = false;
@@ -29,7 +40,7 @@
     state.closed = true; hide();
     state.stream?.getTracks().forEach(t => t.stop());
     video.srcObject = null;
-    button.remove(); shutdown.remove(); panel.remove();
+    mountObserver.disconnect(); button.remove(); shutdown.remove(); panel.remove();
     document.removeEventListener('keydown', onKey);
     delete window.__dniScannerPersistent;
   }
@@ -129,19 +140,19 @@
       video.srcObject = state.stream;
       await video.play();
     }
-    button.textContent = 'Escanear DNI'; button.disabled = false;
+    button.textContent = '📷'; button.disabled = false;
   }
 
   window.__dniScannerPersistent = { open, dispose };
   button.onclick = open;
   document.addEventListener('visibilitychange', () => { if (document.hidden && state.active) hide(); });
   try { if (mobile) {
-    button.textContent = 'Escanear DNI'; button.disabled = false;
+    button.textContent = '📷'; button.disabled = false;
     const module = await import('https://esm.sh/zxing-wasm@3.1.4/reader');
     state.reader = module.readBarcodes;
   } else await prepare(); }
   catch (e) {
-    button.textContent = 'Reintentar escáner'; button.disabled = false;
+    button.textContent = '📷'; button.title = 'Reintentar escáner'; button.disabled = false;
     button.onclick = open;
     console.error('Error preparando escáner:', e);
   }
