@@ -23,10 +23,15 @@
   const guide = css(document.createElement('div'), 'position:absolute;left:10%;top:39%;width:80%;height:22%;border:3px solid #35e69b;box-sizing:border-box;pointer-events:none');
   const status = document.createElement('div'); status.textContent = 'Preparando…';
   const close = document.createElement('button'); close.textContent = 'Cerrar visor'; close.style.cssText = 'padding:8px 18px;cursor:pointer';
-  const shutdown = css(document.createElement('button'), 'position:fixed;right:12px;bottom:calc(70px + env(safe-area-inset-bottom, 0px));z-index:2147483646;background:#444;color:white;border:0;border-radius:8px;padding:8px 12px;font:13px Arial;cursor:pointer');
+  const shutdown = css(document.createElement('button'), 'display:block;margin-top:10px;background:#c62828;color:white;border:0;border-radius:8px;padding:8px 12px;font:13px Arial;cursor:pointer');
+  shutdown.type = 'button';
   shutdown.textContent = 'Apagar escáner';
-  frame.append(video, guide); panel.append(frame, status, close); document.body.append(shutdown, panel); mountButton();
-  const mountObserver = new MutationObserver(() => { if (!state.closed) mountButton(); });
+  frame.append(video, guide); panel.append(frame, status, close); document.body.append(panel); mountButton(); mountShutdown();
+  function mountShutdown() {
+    const confirmButton = document.querySelector('form button[type="submit"]');
+    if (confirmButton && confirmButton.nextElementSibling !== shutdown) confirmButton.insertAdjacentElement('afterend', shutdown);
+  }
+  const mountObserver = new MutationObserver(() => { if (!state.closed) { mountButton(); mountShutdown(); } });
   mountObserver.observe(document.body, { childList: true, subtree: true });
 
   function hide() {
@@ -46,7 +51,7 @@
   }
   function onKey(e) { if (e.key === 'Escape' && state.active) hide(); }
   document.addEventListener('keydown', onKey);
-  close.onclick = hide; shutdown.onclick = dispose;
+  close.onclick = hide; shutdown.onclick = () => { if (window.confirm('¿Apagar el escáner de DNI? Para volver a usarlo tendrás que ejecutar el favorito nuevamente.')) dispose(); };
 
   function fill(selector, value) {
     const input = document.querySelector(selector);
